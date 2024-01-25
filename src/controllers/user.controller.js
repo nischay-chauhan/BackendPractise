@@ -256,7 +256,7 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
         {
             $set : {
                 fullName,
-                email : email
+                email
             }
         },
         {new : true}
@@ -269,4 +269,33 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
 
 })
 
-export {registerUser , loginUser , logoutUser , refreshAccessToken , getCurrentUser, updateAccountDetails , changeCurrentPassword}
+const updateUserAvatar = asyncHandler(async(req, res) => {
+    const avatarLocalPath = req.file?.path;
+    console.log(avatarLocalPath)
+    if(!avatarLocalPath) {
+        throw new ApiError(400, "Please select an image")
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar.url){
+        throw new ApiError(500, "Unable to upload image on cloudinary")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?.id,
+        {
+            $set : {
+                avatar: avatar.url
+            }
+        },
+        {new : true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"))
+
+})
+
+export {registerUser , loginUser , logoutUser , refreshAccessToken , getCurrentUser, updateAccountDetails , changeCurrentPassword , updateUserAvatar}
